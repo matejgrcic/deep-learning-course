@@ -17,11 +17,11 @@ def fcann2_train(X, Y_, param_niter = 100000, param_delta = 0.05, param_lambda =
     b2 = np.zeros((1,C))
 
     for i in range(param_niter):
-        h1 = np.maximum(0, np.dot(X, W1) + b1) # note, ReLU activation
-        scores = np.dot(h1, W2) + b2
+        h1 = np.maximum(0, np.matmul(X, W1) + b1) 
+        scores = np.matmul(h1, W2) + b2
         
         exp_scores = np.exp(scores)
-        probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True) # [N x K]
+        probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True) # [N x C]
         
         data_loss = np.sum(-np.log(probs[range(N), Y_])) / N
         reg_loss = param_lambda * 0.5 * (np.linalg.norm(W1) + np.linalg.norm(W2))

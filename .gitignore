@@ -1,1 +1,8 @@
 .vscode/
+lab2/build/
+lab2/out/
+lab2/datasets/
+*.gz
+*.so
+*.pyc
+.DS_Store

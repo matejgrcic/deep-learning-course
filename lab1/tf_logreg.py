@@ -73,11 +73,11 @@ if __name__ == "__main__":
     tf.set_random_seed(100)
 
     # instanciraj podatke X i labele Yoh_
-    X,Y_ = data.sample_gmm_2d(4, 2, 30)
+    X,Y_ = data.sample_gmm_2d(3, 2, 30)
     Yoh_ = data.class_to_onehot(Y_)
 
     # izgradi graf:
-    logistic_regression_model = TFLogreg(X.shape[1], Yoh_.shape[1], 0.5, 1e-3)
+    logistic_regression_model = TFLogreg(X.shape[1], Yoh_.shape[1], 0.1, 1e-3)
 
     # nauči parametre:
     logistic_regression_model.train(X, Yoh_, 1000, True)

@@ -22,6 +22,8 @@ class TFDeep:
             W = tf.Variable(np.random.randn(shape[i], shape[i+1]), dtype=tf.float32, name=f"W_{i}")
             b = tf.Variable(np.zeros(shape[i + 1]), dtype=tf.float32, name=f"b_{i}")
             score = tf.matmul(h_previous, W) + b
+            if i != len(shape) - 2:
+                score = tf.nn.batch_normalization(score, 0 , 1, 0, 1, 1e-6)
             h = self._get_activation(score, activation_type, f"activation_{i}") if i != len(shape) - 2 else tf.nn.softmax(score, name=f"activation_{i}")
             self.weight_matrices.append(W)
             self.biases.append(b)

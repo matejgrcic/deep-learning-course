@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     X_train = X_train.reshape(60000, 784)
     X_test = X_test.reshape(10000, 784)
-    deep_model = tf_deep.TFDeep( [784, 100, 10], 'ReLU', 0.1, 1e-4)
+    deep_model = tf_deep.TFDeep( [784, 100, 10], 'sigmoid', 0.1, 1e-4)
 
     # nauči parametre:
     deep_model.train(X_train, data.class_to_onehot(y_train), 100, 1000,True)
