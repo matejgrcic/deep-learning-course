@@ -9,8 +9,8 @@ import math
 import skimage as ski
 import skimage.io
 
-DATA_DIR = './lab2/datasets/cifar-10/'
-SAVE_DIR = './lab2/out/'
+DATA_DIR = './datasets/cifar-10/'
+SAVE_DIR = './out/'
 
 def draw_image(img, mean, std):
     img *= std
@@ -81,6 +81,9 @@ class DeepModel():
 
             self.logits = layers.fully_connected(net, num_classes, activation_fn=None, scope='logits')
 
+            # [invalid_class_logits, correct_class_logits] = tf.dynamic_partition(self.logits, tf.cast(self.Y_oh, tf.int32), 2)
+            # invalid_logits = tf.reshape(invalid_class_logits, [num_classes - 1, -1])
+            # self.loss = tf.reduce_mean(tf.reduce_sum(tf.maximum(invalid_logits - correct_class_logits, 0.), axis = 0))
             self.loss = tf.losses.softmax_cross_entropy(self.Y_oh, self.logits)
 
         self.global_step = tf.placeholder(tf.int32, [])
@@ -100,8 +103,6 @@ class DeepModel():
         assert num_examples % batch_size == 0
         num_batches = num_examples // batch_size
 
-        
-
         for epoch in range(1, max_epochs+1):
             cnt_correct = 0
 
@@ -115,8 +116,8 @@ class DeepModel():
                 batch_x = train_x[i*batch_size:(i+1)*batch_size, ...]
                 batch_y = train_y[i*batch_size:(i+1)*batch_size, ...]
 
-                logits_val, loss_val, lr_val = self.session.run(
-                    [self.logits, self.loss, self.optimization, ],
+                logits_val, loss_val, _ = self.session.run(
+                    [self.logits, self.loss, self.optimization],
                     feed_dict={self.X: batch_x, self.Y_oh: batch_y, self.global_step: epoch}
                 )
 
@@ -148,7 +149,9 @@ class DeepModel():
             batch_x = x[i*batch_size:(i+1)*batch_size, ...]
             batch_y = y[i*batch_size:(i+1)*batch_size, ...]
 
-            logits_val, loss_val, lr_val = self.session.run([self.logits, self.loss, self.learning_rate], feed_dict={self.X: batch_x, self.Y_oh: batch_y, self.global_step: epoch})
+            logits_val, loss_val, lr_val= self.session.run(
+                [self.logits, self.loss, self.learning_rate],
+                feed_dict={self.X: batch_x, self.Y_oh: batch_y, self.global_step: epoch})
             yp = np.argmax(logits_val, 1)
             yt = np.argmax(batch_y, 1)
             confusion_matrix[yt, yp] += 1
@@ -197,8 +200,6 @@ def unpickle(file):
     fo.close()
     return dict
 
-DATA_DIR = '../content/drive/My Drive/Colab Notebooks/FER-deep-learning/cifar-10-batches-py'
-SAVE_DIR = '../content/'
 img_width = 32
 img_height = 32
 num_channels = 3
