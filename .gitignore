@@ -6,3 +6,4 @@ lab2/datasets/
 *.so
 *.pyc
 .DS_Store
+lab3/dataset/
