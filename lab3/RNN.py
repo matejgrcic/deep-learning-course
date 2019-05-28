@@ -13,7 +13,7 @@ class RNN:
         self.W = np.random.normal(0, 1e-2, (hidden_size, hidden_size))   # hidden-to-hidden projection
         self.b = np.zeros((hidden_size))                                # input bias
 
-        self.V = np.random.normal(0, 1e-2, (vocab_size, hidden_size))    # output projection
+        self.V = np.random.normal(0, 1e-2, (hidden_size, vocab_size))    # output projection
         self.c = np.zeros((vocab_size))                                 # output bias
 
         # memory of past gradients - rolling sum of squares for Adagrad
@@ -89,7 +89,7 @@ class RNN:
         dh_previous = np.zeros((dh.shape[0], self.hidden_size))
         N = dh.shape[0]
         for i in reversed(range(self.sequence_length)):
-            dh_previous, dU, dW, db = self.rnn_step_backward(dh[:, i, :] + dh_previous, cache[i])
+            dh_previous, dU, dW, db = self.rnn_step_backward(dh[:, i, :] + dh_previous * N, cache[i])
             dU_total += dU
             dW_total += dW
             db_total += db
@@ -108,7 +108,7 @@ class RNN:
         return out
 
     def output_step(self, h):
-        return np.matmul(h, self.V.T) + self.c
+        return np.matmul(h, self.V) + self.c
 
     def output_loss_and_grads(self, h, y):
         # Calculate the loss of the network for each of the outputs
@@ -129,8 +129,9 @@ class RNN:
 
         out = self.output(h)
         y_hat = softmax(out, axis=2)
-        loss = - np.sum(y * np.log(y_hat))
-        dout = (y_hat - y)
+        N = h.shape[0]
+        loss = - np.sum(y * np.log(y_hat)) / N
+        dout = (y_hat - y) / N
         
         dV = np.zeros((self.hidden_size, self.vocab_size))
         dh = np.zeros(h.shape)
@@ -139,7 +140,7 @@ class RNN:
         for i in range(self.sequence_length):
             dV += np.matmul(h[:, i, :].T, dout[:, i, :])
             dc += np.sum(dout[:, i, :].T, axis=1)
-            dh[:, i, :] += np.matmul(dout[:, i, :], self.V)
+            dh[:, i, :] += np.matmul(dout[:, i, :], self.V.T)
 
         # calculate the output (o) - unnormalized log probabilities of classes
         # calculate yhat - softmax of the output
@@ -154,14 +155,14 @@ class RNN:
         self.memory_U += dU ** 2
         self.memory_W += dW ** 2
         self.memory_b += db ** 2
-        self.memory_V += dV.T ** 2
+        self.memory_V += dV ** 2
         self.memory_c += dc ** 2
 
         delta = 1e-7
         self.U -= (self.learning_rate * dU / (np.sqrt(self.memory_U + delta)))
         self.W -= (self.learning_rate * dW / (np.sqrt(self.memory_W + delta)))
         self.b -= (self.learning_rate * db / (np.sqrt(self.memory_b + delta)))
-        self.V -= (self.learning_rate * dV.T / (np.sqrt(self.memory_V + delta)))
+        self.V -= (self.learning_rate * dV / (np.sqrt(self.memory_V + delta)))
         self.c -= (self.learning_rate * dc / (np.sqrt(self.memory_c + delta)))
         # update memory matrices
         # perform the Adagrad update of parameters
@@ -170,12 +171,14 @@ class RNN:
         h, batch_cache = self.rnn_forward(batch_x_oh, h0)
         loss, dh, dV, dc = self.output_loss_and_grads(h, batch_y_oh)
         dU, dW, db = self.rnn_backward(dh, batch_cache)
+        min_val = -5
+        max_val = 5
         self.update(
-            np.clip(dU, -5, 5),
-            np.clip(dW, -5, 5),
-            np.clip(db, -5, 5),
-            np.clip(dV, -5, 5),
-            np.clip(dc, -5, 5))
+            np.clip(dU, min_val, max_val),
+            np.clip(dW, min_val, max_val),
+            np.clip(db, min_val, max_val),
+            np.clip(dV, min_val, max_val),
+            np.clip(dc, min_val, max_val))
         return loss, h[:, -1, :]
 
 if __name__ == "__main__":

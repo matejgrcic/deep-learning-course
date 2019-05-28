@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import softmax
 
 from RNN import RNN
 from dataset import Data
@@ -55,7 +56,10 @@ def sample(seed, n_sample, model):
     sample = []
     for i in range(n_sample - len(seed)):
         model_out = model.output_step(h_initial)[0]
-        sample.append(np.argmax(model_out))
+        probs = softmax(model_out)
+        index = np.random.choice(model.vocab_size, p=probs)
+        # index = np.argmax(model_out)
+        sample.append(index)
         h_initial, _ = model.rnn_step_forward(model_out, h_initial)
 
     return sample
