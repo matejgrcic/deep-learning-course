@@ -3,7 +3,7 @@ import numpy as np
 from RNN import RNN
 from dataset import Data
 
-def run_language_model(dataset, max_epochs, hidden_size=100, sequence_length=30, learning_rate=1e-2, sample_every=100):
+def run_language_model(dataset, max_epochs, hidden_size=100, sequence_length=30, learning_rate=0.1, sample_every=100):
     
     vocab_size = len(dataset.sorted_chars)
     rnn_model = RNN(hidden_size, sequence_length, vocab_size, learning_rate) # initialize the recurrent network
@@ -37,22 +37,27 @@ def run_language_model(dataset, max_epochs, hidden_size=100, sequence_length=30,
         # preserve context between batches.
         loss, h0 = rnn_model.step(h0, x_oh, y_oh)
         average_loss += loss / dataset.num_batches
-        if batch % sample_every == 0: 
+        # if batch % sample_every == 0: 
+        if e: 
             # run sampling (2.2)
-            h_train = h0
-            h0_sample = np.zeros(h0.shape)
-            seed = dataset.encode('HAN:\nIs that good or bad?\n\n')
-            
-            n_sample = 300
-            pass
+            data = 'HAN:\nIs that good or bad?\n\n'
+            seed = np.array(dataset.encode(data))
+            output = sample(seed, 300, rnn_model)
+            print(dataset.decode(output))
         batch += 1
 
-def sample(seed, n_sample):
-    h0 = np.zeros()
-    h0, seed_onehot, sample = None, None, None 
-    # inicijalizirati h0 na vektor nula
-    # seed string pretvoriti u one-hot reprezentaciju ulaza
-    
+def sample(seed, n_sample, model):
+    h_initial = np.zeros((1, model.hidden_size))
+    seed_onehot =  (np.arange(model.vocab_size) == seed[...,None]).astype(int)
+    for i in range(seed.shape[0]):
+        h_initial, _ = model.rnn_step_forward(seed_onehot[i][np.newaxis, :], h_initial)
+
+    sample = []
+    for i in range(n_sample - len(seed)):
+        model_out = model.output_step(h_initial)[0]
+        sample.append(np.argmax(model_out))
+        h_initial, _ = model.rnn_step_forward(model_out, h_initial)
+
     return sample
 
 if __name__ == '__main__':
