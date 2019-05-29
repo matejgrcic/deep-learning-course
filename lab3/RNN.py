@@ -9,12 +9,19 @@ class RNN:
         self.vocab_size = vocab_size
         self.learning_rate = learning_rate
 
-        self.U = np.random.normal(0, 1e-2, (vocab_size, hidden_size))    # input projection
-        self.W = np.random.normal(0, 1e-2, (hidden_size, hidden_size))   # hidden-to-hidden projection
-        self.b = np.zeros((hidden_size, 1))                                # input bias
-
-        self.V = np.random.normal(0, 1e-2, (hidden_size, vocab_size))    # output projection
-        self.c = np.zeros((vocab_size, 1))                                 # output bias
+        # XAVIER INITIALIZATION
+        self.U = np.random.normal(0, 1, (vocab_size, hidden_size)) / (vocab_size + hidden_size)    # input projection
+        self.W = np.random.normal(0, 1, (hidden_size, hidden_size)) / (hidden_size + hidden_size)  # hidden-to-hidden projection
+        self.b = np.zeros((hidden_size, 1))                                                        # input bias
+        self.V = np.random.normal(0, 1, (hidden_size, vocab_size)) / (hidden_size + vocab_size)    # output projection
+        self.c = np.zeros((vocab_size, 1))                                                         # output bias
+        
+        # NORMAL INITIALIZATION
+        # self.U = np.random.normal(0, 1e-2, (vocab_size, hidden_size))                            # input projection
+        # self.W = np.random.normal(0, 1e-2, (hidden_size, hidden_size))                           # hidden-to-hidden projection
+        # self.b = np.zeros((hidden_size, 1))                                                      # input bias
+        # self.V = np.random.normal(0, 1e-2, (hidden_size, vocab_size))                            # output projection
+        # self.c = np.zeros((vocab_size, 1))                                                       # output bias
 
         # memory of past gradients - rolling sum of squares for Adagrad
         self.memory_U = np.zeros_like(self.U)

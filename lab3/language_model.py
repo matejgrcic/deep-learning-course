@@ -43,7 +43,7 @@ def run_language_model(dataset, max_epochs, hidden_size=100, sequence_length=30,
             # run sampling (2.2)
             data = 'HAN:\nIs that good or bad?\n\n'
             seed = np.array(dataset.encode(data))
-            output = sample(seed, 300, rnn_model)
+            output = sample(seed, 100, rnn_model)
             print(dataset.decode(output))
         batch += 1
 
