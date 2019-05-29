@@ -60,7 +60,9 @@ def sample(seed, n_sample, model):
         index = np.random.choice(model.vocab_size, p=probs)
         # index = np.argmax(model_out)
         sample.append(index)
-        h_initial, _ = model.rnn_step_forward(model_out, h_initial)
+        x_input = np.zeros(model_out.shape)
+        x_input[index] = 1
+        h_initial, _ = model.rnn_step_forward(x_input, h_initial)
 
     return sample
 

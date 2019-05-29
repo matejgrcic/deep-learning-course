@@ -11,10 +11,10 @@ class RNN:
 
         self.U = np.random.normal(0, 1e-2, (vocab_size, hidden_size))    # input projection
         self.W = np.random.normal(0, 1e-2, (hidden_size, hidden_size))   # hidden-to-hidden projection
-        self.b = np.zeros((hidden_size))                                # input bias
+        self.b = np.zeros((hidden_size, 1))                                # input bias
 
         self.V = np.random.normal(0, 1e-2, (hidden_size, vocab_size))    # output projection
-        self.c = np.zeros((vocab_size))                                 # output bias
+        self.c = np.zeros((vocab_size, 1))                                 # output bias
 
         # memory of past gradients - rolling sum of squares for Adagrad
         self.memory_U = np.zeros_like(self.U)
@@ -32,7 +32,7 @@ class RNN:
         # U - input projection matrix (input dimension x hidden size)
         # W - hidden to hidden projection matrix (hidden size x hidden size)
         # b - bias of shape (hidden size x 1)
-        h_current = np.tanh(np.matmul(h_prev, self.W) + np.matmul(x, self.U) + self.b)
+        h_current = np.tanh(np.matmul(h_prev, self.W) + np.matmul(x, self.U) + self.b.T)
         cache = (h_prev, x, h_current)
         
         # return the new hidden state and a tuple of values needed for the backward step
@@ -71,7 +71,7 @@ class RNN:
         dU = np.matmul(x.T, da)
         dW = np.matmul(h_prev.T, da)
         dh_prev = np.matmul(da, self.W.T)
-        db = np.sum(da, axis=0)
+        db = np.sum(da, axis=0).reshape(self.b.shape)
         # compute and return gradients with respect to each parameter
         # HINT: you can use the chain rule to compute the derivative of the
         # hyperbolic tangent function and use it to compute the gradient
@@ -108,7 +108,7 @@ class RNN:
         return out
 
     def output_step(self, h):
-        return np.matmul(h, self.V) + self.c
+        return np.matmul(h, self.V) + self.c.T
 
     def output_loss_and_grads(self, h, y):
         # Calculate the loss of the network for each of the outputs
@@ -135,11 +135,11 @@ class RNN:
         
         dV = np.zeros((self.hidden_size, self.vocab_size))
         dh = np.zeros(h.shape)
-        dc = np.zeros((self.vocab_size))
+        dc = np.zeros((self.vocab_size, 1))
 
         for i in range(self.sequence_length):
             dV += np.matmul(h[:, i, :].T, dout[:, i, :])
-            dc += np.sum(dout[:, i, :].T, axis=1)
+            dc += np.sum(dout[:, i, :].T, axis=1).reshape(dc.shape)
             dh[:, i, :] += np.matmul(dout[:, i, :], self.V.T)
 
         # calculate the output (o) - unnormalized log probabilities of classes
@@ -152,11 +152,23 @@ class RNN:
         return loss, dh, dV, dc
 
     def update(self, dU, dW, db, dV, dc):
+        min_val = -5
+        max_val = 5
+        clip = lambda x: np.clip(x, min_val, max_val)
+        dU, dW, db, dV, dc = clip(dU), clip(dW), clip(db), clip(dV), clip(dc)
+
         self.memory_U += dU ** 2
         self.memory_W += dW ** 2
         self.memory_b += db ** 2
         self.memory_V += dV ** 2
         self.memory_c += dc ** 2
+
+        # self.memory_U = clip(self.memory_U)
+        # self.memory_W = clip(self.memory_W)
+        # self.memory_b = clip(self.memory_b)
+        # self.memory_V = clip(self.memory_V)
+        # self.memory_c = clip(self.memory_c)
+        # dU, dW, db, dV, dc = clip(dU), clip(dW), clip(db), clip(dV), clip(dc)
 
         delta = 1e-7
         self.U -= (self.learning_rate * dU / (np.sqrt(self.memory_U + delta)))
@@ -173,12 +185,7 @@ class RNN:
         dU, dW, db = self.rnn_backward(dh, batch_cache)
         min_val = -5
         max_val = 5
-        self.update(
-            np.clip(dU, min_val, max_val),
-            np.clip(dW, min_val, max_val),
-            np.clip(db, min_val, max_val),
-            np.clip(dV, min_val, max_val),
-            np.clip(dc, min_val, max_val))
+        self.update(dU, dW ,db ,dV, dc)
         return loss, h[:, -1, :]
 
 if __name__ == "__main__":
