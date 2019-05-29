@@ -183,8 +183,6 @@ class RNN:
         h, batch_cache = self.rnn_forward(batch_x_oh, h0)
         loss, dh, dV, dc = self.output_loss_and_grads(h, batch_y_oh)
         dU, dW, db = self.rnn_backward(dh, batch_cache)
-        min_val = -5
-        max_val = 5
         self.update(dU, dW ,db ,dV, dc)
         return loss, h[:, -1, :]
 
