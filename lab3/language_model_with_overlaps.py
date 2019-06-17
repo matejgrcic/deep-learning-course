@@ -2,7 +2,7 @@ import numpy as np
 from scipy.special import softmax
 
 from RNN import RNN
-from dataset import Data
+from dataset_with_overlaps import Data
 
 def run_language_model(dataset, max_epochs, hidden_size=100, sequence_length=30, learning_rate=0.1, sample_every=200):
     
@@ -78,4 +78,4 @@ if __name__ == '__main__':
     dataset = Data("./lab3/dataset/cornell movie-dialogs corpus/selected_conversations.txt", 10, 30)
     dataset.preprocess()
     dataset.create_minibatches()
-    run_language_model(dataset, 20)
+    run_language_model(dataset, 200)

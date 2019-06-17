@@ -74,7 +74,10 @@ class RNN:
         # grad_next - upstream gradient of the loss with respect to the next hidden state and current output
         # cache - cached information from the forward pass
         h_prev, x, h_current = cache
-        da = grad_next * (np.ones(h_current.shape) - (h_current ** 2))
+        da = np.zeros(grad_next.shape)
+        for i in range(grad_next.shape[0]):
+            da[i] = np.matmul(grad_next[i][np.newaxis, :], np.diag(1 - h_current[i] ** 2))
+        # da_b = grad_next * (np.ones(h_current.shape) - (h_current ** 2))
         dU = np.matmul(x.T, da)
         dW = np.matmul(h_prev.T, da)
         dh_prev = np.matmul(da, self.W.T)
